@@ -45,6 +45,7 @@ export default async function ProjectAdminLayout({
         items={[
           { href: "/dashboard", label: "Dashboard" },
           { href: "/challenges", label: "Strategic Challenges" },
+          { href: "/teams", label: "Teams & Participants" },
           { href: "/results", label: "Results & KPIs" },
           { href: "/demo-day", label: "Demo Day" },
           { href: "/settings", label: "Settings" },

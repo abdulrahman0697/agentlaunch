@@ -35,10 +35,11 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  // Project Admin scope (`/dashboard`, `/challenges`, `/results`, `/demo-day`, `/settings`)
+  // Project Admin scope (`/dashboard`, `/challenges`, `/teams`, `/results`, `/demo-day`, `/settings`)
   if (
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/challenges") ||
+    pathname.startsWith("/teams") ||
     pathname.startsWith("/results") ||
     pathname.startsWith("/demo-day") ||
     pathname.startsWith("/settings")
@@ -80,6 +81,7 @@ export const config = {
     "/admin/:path*",
     "/dashboard/:path*",
     "/challenges/:path*",
+    "/teams/:path*",
     "/results/:path*",
     "/demo-day/:path*",
     "/settings/:path*",

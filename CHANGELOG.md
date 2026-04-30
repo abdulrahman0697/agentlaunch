@@ -98,3 +98,58 @@ All notable changes to AgentLaunch are tracked here, milestone by milestone, as 
   create project → 4 detail tabs render → invite Project Admin → admin
   logs in → CSV import 3 participants → all 3 log in → bump program
   week → activity feed shows every action → toolbox CRUD works.
+
+### M4 — Project Admin end-to-end (Section 5 / Section 10 step 4b)
+
+- **Dashboard (`/dashboard`)** — Section 5.1: client-branded welcome
+  banner (logo, navy/maroon header, 10-week strip with current week
+  highlighted in `secondaryColor`), 5 stat cards (Strategic
+  Challenges · Active Teams · Agents in Build · Certifications Earned
+  · Avg Engagement), recent challenges with status/priority/AI-ready
+  badges, recent activity feed.
+- **Strategic Challenges (`/challenges`)** — Section 5.2: card grid
+  with status, priority, AI-analysis tag, department tags. **New
+  challenge form** (`/challenges/new`) with all fields from the BRD.
+  **Challenge detail (`/challenges/[id]`)** with 6 tabs: Brief · AI
+  Analysis · Benchmarks · Suggested Agents · Toolbox · Discussion.
+  - Suggested Agents tab includes the **2x2 feasibility × impact
+    scatter** (recharts) with each agent labeled.
+  - Discussion tab: comments + scoped activity stream.
+  - "Generate AI Analysis" button with progress messages and
+    cache/regenerate semantics. *AI is a stub in M4 — returns
+    consulting-grade canned data so the entire UI is demonstrable.
+    M6 swaps in the real Claude call (PROMPT 1 from Section 7.3).*
+  - "Assign to Team" panel with create-new-team flow inline.
+- **Teams & Participants (`/teams`)** — Section 5.3: per-team cards
+  with members + assigned challenge, dropdown-based participant
+  re-assignment, unassigned-participant pool, in-place team creation.
+- **Results & KPIs (`/results`)** — Section 5.4 in full:
+  - Phase progress (stacked bars per phase Discovery/Design/Build/Realization)
+  - Use case pipeline funnel (Posted → Concepts → Blueprints → Working → Demo-Ready)
+  - Projected ROI stat cards (annualized hours saved · cost reduced · revenue enabled)
+  - Certification tracker (% earned)
+  - Engagement heatmap by department × week (last 6 weeks)
+  - Export PDF button (window.print())
+- **Demo Day (`/demo-day`)** — Section 5.5: schedule (datetime-local),
+  reviewers/jury list (add/remove), pitch order (up/down to reorder),
+  per-agent greenlight / needs-revision / no-go decision capture,
+  decisions log, all persisted via `DemoDay` model.
+- **Settings (`/settings`)** — Section 5.6: read-only branding card
+  (Sia controls), full participant manager (add / reset password
+  with mocked email / remove), notification-preference toggles.
+- **APIs** — `/api/challenges`, `/api/challenges/[id]/assign`,
+  `/api/challenges/[id]/comments`, `/api/teams`,
+  `/api/teams/[id]/members`, `/api/demo-day`,
+  `/api/demo-day/decisions`, `/api/participants[/:id][/reset-password]`.
+  Every write logs to `ActivityLog`.
+- **AI analysis stub** at `/api/ai/analyze-challenge` writes to
+  `aiAnalysis`, `suggestedAgents`, `benchmarkData`, plus an `AiCallLog`
+  entry. M6 replaces the body with the real Claude call.
+- **Helpers** — `lib/auth/server.ts` (role-checked `getXSession`
+  helpers), `lib/program.ts` (week → 4-phase mapping).
+- **Verification** — `next build` clean. Curl-driven end-to-end:
+  PA login → all 7 pages 200 → create challenge → run analysis →
+  4 suggested agents render in Agents tab → create team →
+  assign team to challenge → add participant to team → post
+  comment → save Demo Day plan → add new participant → dashboard
+  shows "AI analysis ready" and Team Skyway.
