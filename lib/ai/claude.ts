@@ -16,11 +16,14 @@ import Anthropic from "@anthropic-ai/sdk";
 import { prisma } from "@/lib/db";
 
 export const MODELS = {
-  // Defaults per BRD Section 7.1 — overridable via env so a dev can swap
-  // to a faster/cheaper model without touching code.
+  // Defaults per BRD Section 7.1 (Section 7.2 model table). The BRD names
+  // them as "claude-opus-4-7", "claude-sonnet-4-6", "claude-haiku-4-5";
+  // the Anthropic API uses date-stamped IDs for haiku — we keep the BRD
+  // names as env-overridable defaults but resolve haiku to the real ID
+  // so a live ANTHROPIC_API_KEY won't 400 on us.
   opus: process.env.CLAUDE_MODEL_OPUS || "claude-opus-4-7",
   sonnet: process.env.CLAUDE_MODEL_SONNET || "claude-sonnet-4-6",
-  haiku: process.env.CLAUDE_MODEL_HAIKU || "claude-haiku-4-5",
+  haiku: process.env.CLAUDE_MODEL_HAIKU || "claude-haiku-4-5-20251001",
 } as const;
 
 let _client: Anthropic | null = null;
@@ -120,8 +123,9 @@ export async function generateJson<T>(
       return { ok: false, error: "Could not parse AI output", raw };
     }
   } catch (e) {
-    await logCall(input, "error", 0, 0, (e as Error).message);
-    return { ok: false, error: (e as Error).message };
+    const msg = errorMessage(e);
+    await logCall(input, "error", 0, 0, msg);
+    return { ok: false, error: msg };
   }
 }
 
@@ -147,20 +151,53 @@ export async function streamText(input: JsonCallInput): Promise<
     });
     let inTok = 0;
     let outTok = 0;
+
+    // Peek the first event to surface auth / model-not-found / rate-limit
+    // errors BEFORE the route writes the streamed response. If the first
+    // event throws, we return {ok:false} so the route falls back to its
+    // stub instead of half-streaming a broken reply.
+    const sIter = stream[Symbol.asyncIterator]();
+    let first: IteratorResult<Anthropic.MessageStreamEvent>;
+    try {
+      first = await sIter.next();
+    } catch (e) {
+      const msg = errorMessage(e);
+      await logCall(input, "error", 0, 0, msg);
+      return { ok: false, error: msg };
+    }
+    if (first.done) {
+      return { ok: false, error: "Empty stream from Anthropic API" };
+    }
+
+    function record(event: Anthropic.MessageStreamEvent): string | null {
+      if (
+        event.type === "content_block_delta" &&
+        event.delta.type === "text_delta"
+      ) {
+        return event.delta.text;
+      }
+      if (event.type === "message_delta" && event.usage) {
+        outTok += event.usage.output_tokens || 0;
+      }
+      if (event.type === "message_start" && event.message.usage) {
+        inTok = event.message.usage.input_tokens || 0;
+      }
+      return null;
+    }
+
     async function* iter() {
-      for await (const event of stream) {
-        if (
-          event.type === "content_block_delta" &&
-          event.delta.type === "text_delta"
-        ) {
-          yield event.delta.text;
+      const t0 = record(first.value);
+      if (t0) yield t0;
+      try {
+        while (true) {
+          const r = await sIter.next();
+          if (r.done) break;
+          const t = record(r.value);
+          if (t) yield t;
         }
-        if (event.type === "message_delta" && event.usage) {
-          outTok += event.usage.output_tokens || 0;
-        }
-        if (event.type === "message_start" && event.message.usage) {
-          inTok = event.message.usage.input_tokens || 0;
-        }
+      } catch (e) {
+        // Stream interrupted mid-flight — log and stop yielding.
+        await logCall(input, "error", inTok, outTok, errorMessage(e));
       }
     }
     return {
@@ -171,8 +208,19 @@ export async function streamText(input: JsonCallInput): Promise<
       },
     };
   } catch (e) {
-    await logCall(input, "error", 0, 0, (e as Error).message);
-    return { ok: false, error: (e as Error).message };
+    const msg = errorMessage(e);
+    await logCall(input, "error", 0, 0, msg);
+    return { ok: false, error: msg };
+  }
+}
+
+function errorMessage(e: unknown): string {
+  if (e instanceof Error) return e.message;
+  if (typeof e === "string") return e;
+  try {
+    return JSON.stringify(e);
+  } catch {
+    return "Unknown API error";
   }
 }
 
