@@ -51,3 +51,50 @@ All notable changes to AgentLaunch are tracked here, milestone by milestone, as 
   Project + Project Admin + Participant. Verified end-to-end via curl: 10/10
   auth tests pass (login, redirect by role, blocked routes, bad password,
   logout). The full Section 9 seed ships in M7.
+
+### M3 — Sia Admin end-to-end (Section 4 / Section 10 step 4a)
+
+- **Dashboard (`/admin/dashboard`)** — Section 4.1: 4 stat cards (Active
+  Projects, Participants, Avg Program Week, Completed Demo Days), full
+  projects table (status, week, participants, challenges, working agents,
+  last activity), live cross-project activity feed, "+ New Project" and
+  "Invite Sia team member" quick actions.
+- **Projects list (`/admin/projects`)** + **Project detail (`/admin/projects/[id]`)**
+  with the six tabs from Section 4.2: Overview / Users / Challenges /
+  Agents / Activity / Settings. Overview includes a 10-week program
+  timeline visual, teams panel, challenges panel.
+- **Create project (`/admin/projects/new`)** — Section 4.2: form with
+  client name, logo upload (data-URL for prototype), primary/secondary
+  hex color pickers with live brand preview, start/end dates, cohort
+  size, welcome message; auto-slug generated; soft-collision suffixing.
+- **Settings tab** — Section 4.2/4.4: edit every field including
+  "advance program week (1→10) manually" (range slider), feature toggle
+  for the certifications track, archive button (soft-delete to
+  `status=archived` with confirm).
+- **User management** — Section 4.3:
+  - Add Project Admin (in-tab form; mocked email send via
+    `console.log` per Section 11).
+  - Add single participant.
+  - Bulk CSV upload (`email,name,department,jobTitle`) with default
+    password — duplicate emails are skipped.
+  - **Global users table (`/admin/users`)** — Sia Admins, Project Admins
+    (with project + last-login), all Participants (with stage badge).
+- **Cross-Project Analytics (`/admin/analytics`)** — Section 4.5:
+  Recharts bars comparing projected ROI (hours saved · cost reduced ·
+  revenue enabled), engagement & completion · current week ·
+  demo-ready agents, top challenges by impact score, toolbox
+  utilization, AI cost log summary (calls / estimated cost / errors).
+- **Sia Toolbox (`/admin/toolbox`)** — Section 4.6: full CRUD on the
+  6-pillar toolbox plus a project × toolbox-item assignment matrix
+  (checkbox grid) so each item's visibility per project is controlled.
+- **API** — `POST/PUT/DELETE /api/admin/projects[/id]`,
+  `/admins`, `/participants`, `/api/admin/toolbox[/id][/assign]`. Every
+  admin write logs an `ActivityLog` entry feeding the dashboard feed.
+- **UI primitives** — `Badge` (status/priority variants), `StatCard`,
+  `PageHeader`, `ActivityFeed`, `TabNav`, recharts wrappers
+  (`ComparisonBars`, `FunnelBars`, `FeasibilityImpactScatter` —
+  the scatter is reused in M4).
+- **Verification** — `next build` clean. Curl-driven end-to-end:
+  create project → 4 detail tabs render → invite Project Admin → admin
+  logs in → CSV import 3 participants → all 3 log in → bump program
+  week → activity feed shows every action → toolbox CRUD works.
