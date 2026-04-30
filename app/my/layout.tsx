@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 import { SidebarNav } from "@/components/sidebar-nav";
 import { LogoutButton } from "@/components/logout-button";
+import { AICoach } from "@/components/ai-coach";
 
 export default async function ParticipantLayout({
   children,
@@ -64,6 +65,7 @@ export default async function ParticipantLayout({
       >
         <div className="p-8">{children}</div>
       </div>
+      <AICoach />
     </div>
   );
 }

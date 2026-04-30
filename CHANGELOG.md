@@ -153,3 +153,70 @@ All notable changes to AgentLaunch are tracked here, milestone by milestone, as 
   assign team to challenge → add participant to team → post
   comment → save Demo Day plan → add new participant → dashboard
   shows "AI analysis ready" and Team Skyway.
+
+### M5 — Participant end-to-end (Section 6 / Section 10 step 4c)
+
+- **Dashboard (`/my/dashboard`)** — Section 6.1: personalized welcome,
+  4-phase progress bar (Discovery / Design / Build / Realization), "My
+  Team" card, "This week's tasks" tied to current phase, modules-done /
+  hours-invested / certifications counters.
+- **Challenges browse (`/my/challenges`)** — Section 6.2: search +
+  priority + status + department filters, agent-count and avg
+  feasibility/impact badges, claim status. **Detail
+  (`/my/challenges/[id]`)** shows the same AI analysis the project
+  admin sees plus the 2x2 scatter, with a context-aware "Claim with my
+  team" button (handles all states: not on team, team has challenge
+  already, already claimed, etc.).
+- **Build Workspace (`/my/build`)** — Section 6.3, all four tabs:
+  - **1 · Discovery & Scoping** — auto-generated brief from the AI
+    analysis, editable concept brief (name / purpose / scope), the
+    suggested-agent shortlist for context.
+  - **2 · Agent Design (Blueprint)** — framework + LLM, inputs,
+    outputs, **tool checkbox grid** (web search · DB query · email ·
+    calendar · code execution · doc parsing · custom API · custom
+    additions), memory & guardrails, **"Review my blueprint"** with
+    streaming markdown response, recommended-framework callout pulled
+    from the analysis. Saving flips status to `blueprint`.
+  - **3 · Build & Iterate** — code scaffolding generator (writes a
+    runnable LangGraph/LangChain/Claude-SDK starter project — `agent.py`,
+    `tools.py`, `prompts.py`, `requirements.txt`, `README.md`), prompt
+    library, simulated test harness, weekly iteration log. Status
+    transitions (building → testing → demo-ready) recorded.
+  - **4 · Realization** — full ROI calculator (time × hourly cost
+    auto-compute, currency, adoption curve, time horizon, assumptions),
+    KPI picker (suggestions + custom), risks list, 3-6-12 scale-up
+    roadmap, **ROI sanity check** (PROMPT 7 schema — verdict +
+    credibility + assumption review + jury questions), **pitch deck
+    generator** (PROMPT 4 schema — 5 slides with headline, bullets,
+    visual, speaker notes + anticipated jury questions + presenter tips).
+- **Learning Hub (`/my/learn`)** — Section 6.4: topic filter, per-card
+  open/mark-complete/quiz buttons, completion progress, certification
+  pathway tracker with direct links to Anthropic / Google Cloud /
+  Microsoft / DeepLearning.AI. Quiz modal generates 5 mixed-difficulty
+  multiple-choice questions (PROMPT 6 schema), grades and explains.
+- **AI Coach sidebar (`AICoach` component, mounted in `app/my/layout.tsx`)**
+  — Section 6.5: persistent floating widget on every participant page,
+  streamed responses, contextual replies for guardrails / scope /
+  framework / ROI / prompts. Messages persist to `CoachMessage`.
+- **Resources (`/my/resources`)** — Section 6.6: 4 standard
+  templates (concept brief / blueprint canvas / ROI / pitch deck) +
+  toolbox assets filtered to those the project admin has enabled +
+  community placeholder.
+- **APIs** — `/api/my/agent/[id]` (PUT for every blueprint/ROI field),
+  `/api/my/challenges/[id]/claim`, `/api/my/learning/[id]/complete`,
+  `/api/my/learning/[id]/quiz-attempt`, `/api/ai/review-blueprint`
+  (streaming), `/api/ai/scaffold-code`, `/api/ai/roi-validate`,
+  `/api/ai/generate-pitch`, `/api/ai/coach` (streaming),
+  `/api/ai/quiz`. Every AI route writes an `ActivityLog` and `AiCallLog`
+  entry. **All 6 of these AI routes are stubs in M5 — M6 swaps them
+  for the real Claude calls (PROMPT 2 / 3 / 7 / 4 / 5 / 6 from
+  Section 7) without touching the UI.**
+- **Helpers** — `lib/agent.ts` (`getOrCreateTeamAgent`).
+- **Verification** — `next build` clean. Curl-driven end-to-end as
+  Ahmed Al-Kuwari: 5 `/my/*` pages 200 → blueprint saved →
+  streaming review returns "READY TO BUILD" → 3,848-char LangGraph
+  scaffold → ROI saved → sanity check `DEFENSIBLE 8/10` with 2
+  assumptions reviewed → pitch deck `5 slides + 3 jury questions` →
+  AI Coach streams the canonical guardrail answer → quiz generated +
+  attempt logged at 80% → dashboard shows the challenge and team.
+  Activity log shows all 8 participant actions.
