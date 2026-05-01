@@ -76,9 +76,15 @@ export async function POST(req: NextRequest) {
       let acc = "";
       const stream = new ReadableStream({
         async start(controller) {
-          for await (const chunk of r.stream) {
-            acc += chunk;
-            controller.enqueue(encoder.encode(chunk));
+          try {
+            for await (const chunk of r.stream) {
+              acc += chunk;
+              controller.enqueue(encoder.encode(chunk));
+            }
+          } catch {
+            controller.enqueue(
+              encoder.encode("\n\n_(review truncated — stream timed out; partial review saved)_"),
+            );
           }
           controller.close();
           await r.done();

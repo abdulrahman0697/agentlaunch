@@ -92,9 +92,18 @@ export async function POST(req: NextRequest) {
       let acc = "";
       const stream = new ReadableStream({
         async start(controller) {
-          for await (const chunk of r.stream) {
-            acc += chunk;
-            controller.enqueue(encoder.encode(chunk));
+          try {
+            for await (const chunk of r.stream) {
+              acc += chunk;
+              controller.enqueue(encoder.encode(chunk));
+            }
+          } catch {
+            // Anthropic stream idle-timeout / network blip — keep the
+            // partial response visible and signal a soft truncation to
+            // the participant.
+            controller.enqueue(
+              encoder.encode("\n\n_(coach reply truncated — stream timed out, partial response shown)_"),
+            );
           }
           controller.close();
           await r.done();

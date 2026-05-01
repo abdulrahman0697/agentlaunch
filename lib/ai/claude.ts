@@ -31,7 +31,14 @@ function client(): Anthropic | null {
   if (_client) return _client;
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) return null;
-  _client = new Anthropic({ apiKey: key });
+  _client = new Anthropic({
+    apiKey: key,
+    // Generous timeout for long Opus generations and slow networks. Default
+    // is ~10min for streams but we set explicitly so any environment-level
+    // proxy/idle-timeout assumption is also adjusted on retries.
+    timeout: 10 * 60 * 1000,
+    maxRetries: 2,
+  });
   return _client;
 }
 
