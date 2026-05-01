@@ -283,3 +283,55 @@ All notable changes to AgentLaunch are tracked here, milestone by milestone, as 
   token caps & temperatures match Section 7.2 / 7.3-7.9 exactly. With
   a placeholder key all 7 endpoints return their stub fallback (both
   streaming and non-streaming verified). `next build` clean.
+
+### M7 — Section 9 seed + README (Section 10 steps 6-7)
+
+- **Full BRD Section 9 seed** at `prisma/seed.ts` — drops & recreates every
+  table for reproducibility per §9.8. After `npm run seed`:
+  - 2 Sia Admins (`admin@sia-partners.com`, `taha@sia-partners.com`)
+  - 18 Sia Toolbox items across all 6 pillars (§9.2)
+  - 20 Learning Hub resources (§9.6) covering Anthropic, DeepLearning.AI,
+    LangChain, CrewAI, AutoGen, Google, Microsoft, Sia Internal
+  - 3 projects with branding cascade:
+    - **QCAA** (lead demo, week 6, maroon/gold) — 18 participants, 4 teams,
+      5 challenges (4 with full pre-generated PROMPT 1 analysis +
+      blueprints + ROI; 1 OPEN for live Claude demo per §12 step 4)
+    - **MWAN** (week 4, green/white) — 15 participants, 3 teams, 3
+      challenges (2 with analysis + blueprints, 1 OPEN for live demo)
+    - **Dubai Customs** (graduated, gold/navy) — 20 participants, 4 teams,
+      4 fully completed agents with ROI, pitch decks, and Demo Day
+      decisions logged (3 greenlit, 1 needs-revision)
+  - 10 agent blueprints with realistic ROI / KPIs / risks / 3-6-12 roadmaps
+  - 67 activity log entries spread across the last 14 days
+  - Demo Day rows for all 3 projects
+- **Pre-generated AI outputs** at `prisma/seed-data/ai-outputs/` — full
+  PROMPT 1 schema match. Lead demo analysis (drone permit) lives in its own
+  JSON; smaller analyses use a `makeAnalysis()` factory to stay compact.
+  `samplePitchDeck()` factory provides PROMPT 4-shaped decks for the DC
+  agents.
+- **Logo placeholders** as SVG (per §9.8) at `public/seed/logos/qcaa-logo.svg`,
+  `mwan-logo.svg`, `dc-logo.svg` — colored tiles with org initials.
+- **`README.md`** — setup, env vars, demo credentials for all roles, the
+  full Section 12 demo flows (sales + Sia internal), Section 7 prompt
+  table with model/token/temp per file, "running without an API key"
+  instructions, project layout, useful commands, out-of-scope.
+- **`prisma.seed`** wired in `package.json` so `npx prisma db seed` works
+  alongside `npm run seed`.
+- **Verification** — `npm run seed` prints the BRD's prescribed summary
+  table. After seeding, all 16 role-scoped pages (5 Sia Admin · 6 Project
+  Admin · 5 Participant) render `200`. QCAA dashboard correctly renders
+  client name, "Drone Permit Processing", "Team Skyway", "Week 6". All 3
+  projects visible to Sia Admin. `next build` clean.
+
+---
+
+## Final state
+
+All 7 milestones from BRD Section 10 are complete. The platform implements
+the Section 12 success criteria end-to-end:
+
+- Sales demo flow (8 steps) — works.
+- Sia internal flow (4 steps) — works.
+
+Total: 123 files, ~12K lines of app code (excluding lockfile), 30 routes,
+all 7 Section 7 prompts wired with stub fallback, 53-participant seed.
