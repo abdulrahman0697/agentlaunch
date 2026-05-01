@@ -1,5 +1,6 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import type { NextResponse } from "next/server";
 
 export type UserRole = "sia_admin" | "project_admin" | "participant";
 
@@ -41,21 +42,40 @@ export async function verifySession(token: string): Promise<SessionPayload | nul
   }
 }
 
-export async function setSessionCookie(payload: SessionPayload) {
+const COOKIE_OPTIONS = {
+  httpOnly: true as const,
+  sameSite: "lax" as const,
+  path: "/",
+  maxAge: SESSION_TTL_SECONDS,
+  secure: process.env.NODE_ENV === "production",
+};
+
+/**
+ * Attach the session cookie directly to a NextResponse.
+ *
+ * Setting cookies via the request-scoped `cookies()` helper is unreliable
+ * inside Route Handlers under Next.js 15/16 — the cookie sometimes isn't
+ * flushed to the response. Setting it on the NextResponse explicitly is
+ * the canonical pattern.
+ */
+export async function attachSessionCookie<T>(
+  res: NextResponse<T>,
+  payload: SessionPayload,
+): Promise<NextResponse<T>> {
   const token = await signSession(payload);
-  (await cookies()).set(SESSION_COOKIE, token, {
-    httpOnly: true,
-    sameSite: "lax",
-    path: "/",
-    maxAge: SESSION_TTL_SECONDS,
-    secure: process.env.NODE_ENV === "production",
-  });
+  res.cookies.set(SESSION_COOKIE, token, COOKIE_OPTIONS);
+  return res;
 }
 
-export async function clearSessionCookie() {
-  (await cookies()).delete(SESSION_COOKIE);
+export function clearSessionCookieOn<T>(res: NextResponse<T>): NextResponse<T> {
+  res.cookies.set(SESSION_COOKIE, "", { ...COOKIE_OPTIONS, maxAge: 0 });
+  return res;
 }
 
+/**
+ * Read the session cookie from the request scope. Used by Server
+ * Components and `requireSession()` calls in API routes.
+ */
 export async function getSession(): Promise<SessionPayload | null> {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token) return null;
@@ -70,3 +90,4 @@ export async function requireSession(role?: UserRole): Promise<SessionPayload> {
 }
 
 export const SESSION_COOKIE_NAME = SESSION_COOKIE;
+

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { clearSessionCookie, getSession } from "@/lib/auth/session";
+import { clearSessionCookieOn, getSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 
 export async function POST() {
@@ -18,6 +18,5 @@ export async function POST() {
       })
       .catch(() => {});
   }
-  await clearSessionCookie();
-  return NextResponse.json({ ok: true });
+  return clearSessionCookieOn(NextResponse.json({ ok: true }));
 }

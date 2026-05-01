@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateClientUser } from "@/lib/auth/lookup";
-import { setSessionCookie } from "@/lib/auth/session";
+import { attachSessionCookie } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 
 export async function POST(req: NextRequest) {
@@ -12,7 +12,6 @@ export async function POST(req: NextRequest) {
   if (!session) {
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
   }
-  await setSessionCookie(session);
   await prisma.activityLog
     .create({
       data: {
@@ -27,5 +26,6 @@ export async function POST(req: NextRequest) {
     .catch(() => {});
   const redirect =
     session.role === "project_admin" ? "/dashboard" : "/my/dashboard";
-  return NextResponse.json({ ok: true, redirect });
+  const res = NextResponse.json({ ok: true, redirect });
+  return attachSessionCookie(res, session);
 }
