@@ -12,11 +12,26 @@ function getSecret(): Uint8Array {
 
 async function readRole(req: NextRequest): Promise<string | null> {
   const token = req.cookies.get(SESSION_COOKIE)?.value;
-  if (!token) return null;
+  if (!token) {
+    if (process.env.NODE_ENV !== "production") {
+      console.log(`[mw] ${req.nextUrl.pathname} — no session cookie`);
+    }
+    return null;
+  }
   try {
     const { payload } = await jwtVerify(token, getSecret());
+    if (process.env.NODE_ENV !== "production") {
+      console.log(
+        `[mw] ${req.nextUrl.pathname} — role=${payload.role} sub=${payload.sub}`,
+      );
+    }
     return (payload.role as string) ?? null;
-  } catch {
+  } catch (e) {
+    if (process.env.NODE_ENV !== "production") {
+      console.log(
+        `[mw] ${req.nextUrl.pathname} — JWT verify failed: ${(e as Error).message}`,
+      );
+    }
     return null;
   }
 }
