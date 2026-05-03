@@ -17,9 +17,10 @@ export function AddUsersPanel({ projectId }: { projectId: string }) {
   // ---- Admin: single add ----------------------------------------------
   async function addAdmin(e: React.FormEvent<HTMLFormElement>, mode: "add" | "invite") {
     e.preventDefault();
+    const form = e.currentTarget;
     setBusy(true);
     setAdminMsg(null);
-    const fd = new FormData(e.currentTarget);
+    const fd = new FormData(form);
     const res = await fetch(`/api/admin/projects/${projectId}/admins`, {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -39,7 +40,7 @@ export function AddUsersPanel({ projectId }: { projectId: string }) {
           ? "Invitation sent (mocked email — see server console)."
           : "Project Admin added.",
       );
-      (e.currentTarget as HTMLFormElement).reset();
+      form.reset();
       router.refresh();
     } else {
       const j = await res.json().catch(() => ({}));
@@ -50,9 +51,10 @@ export function AddUsersPanel({ projectId }: { projectId: string }) {
   // ---- Admin: CSV bulk -------------------------------------------------
   async function uploadAdminCsv(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const form = e.currentTarget;
     setBusy(true);
     setAdminCsvMsg(null);
-    const fd = new FormData(e.currentTarget);
+    const fd = new FormData(form);
     const res = await fetch(`/api/admin/projects/${projectId}/admins`, {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -66,7 +68,7 @@ export function AddUsersPanel({ projectId }: { projectId: string }) {
     const j = await res.json();
     if (res.ok) {
       setAdminCsvMsg(`Imported ${j.added} admin(s). ${j.skipped} skipped.`);
-      (e.currentTarget as HTMLFormElement).reset();
+      form.reset();
       router.refresh();
     } else {
       setAdminCsvMsg(j.error || "Failed.");
@@ -76,9 +78,10 @@ export function AddUsersPanel({ projectId }: { projectId: string }) {
   // ---- Participants: single + CSV (unchanged) --------------------------
   async function addOneParticipant(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const form = e.currentTarget;
     setBusy(true);
     setParticipantMsg(null);
-    const fd = new FormData(e.currentTarget);
+    const fd = new FormData(form);
     const res = await fetch(`/api/admin/projects/${projectId}/participants`, {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -95,7 +98,7 @@ export function AddUsersPanel({ projectId }: { projectId: string }) {
     const j = await res.json();
     if (res.ok) {
       setParticipantMsg(`Added ${j.added} participant(s).`);
-      (e.currentTarget as HTMLFormElement).reset();
+      form.reset();
       router.refresh();
     } else {
       setParticipantMsg(j.error || "Failed.");
@@ -104,9 +107,10 @@ export function AddUsersPanel({ projectId }: { projectId: string }) {
 
   async function uploadParticipantCsv(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const form = e.currentTarget;
     setBusy(true);
     setParticipantMsg(null);
-    const fd = new FormData(e.currentTarget);
+    const fd = new FormData(form);
     const res = await fetch(`/api/admin/projects/${projectId}/participants`, {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -120,7 +124,7 @@ export function AddUsersPanel({ projectId }: { projectId: string }) {
     const j = await res.json();
     if (res.ok) {
       setParticipantMsg(`Imported ${j.added} participant(s). ${j.skipped} skipped.`);
-      (e.currentTarget as HTMLFormElement).reset();
+      form.reset();
       router.refresh();
     } else {
       setParticipantMsg(j.error || "Failed.");

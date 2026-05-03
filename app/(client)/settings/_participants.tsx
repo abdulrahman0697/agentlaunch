@@ -24,9 +24,10 @@ export function ParticipantManager({ participants }: { participants: Row[] }) {
 
   async function addOne(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const form = e.currentTarget;
     setBusy(true);
     setMsg(null);
-    const fd = new FormData(e.currentTarget);
+    const fd = new FormData(form);
     const res = await fetch("/api/participants", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -42,7 +43,7 @@ export function ParticipantManager({ participants }: { participants: Row[] }) {
     if (res.ok) {
       setMsg("Added.");
       setAdding(false);
-      (e.currentTarget as HTMLFormElement).reset();
+      form.reset();
       startTransition(() => router.refresh());
     } else {
       const j = await res.json().catch(() => ({}));
