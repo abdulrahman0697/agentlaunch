@@ -21,6 +21,8 @@ const labels: Record<string, string> = {
   "sia_admin.project_archived": "archived a project",
   "sia_admin.week_advanced": "advanced the program week",
   "sia_admin.project_admin_invited": "invited a Project Admin",
+  "sia_admin.project_admin_added": "added a Project Admin",
+  "sia_admin.project_admins_added": "imported Project Admins",
   "sia_admin.participants_added": "added participants",
   "project_admin.challenge_created": "posted a strategic challenge",
   "project_admin.challenge_analyzed": "ran AI analysis on a challenge",
