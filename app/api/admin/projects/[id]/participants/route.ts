@@ -11,13 +11,22 @@ interface ParticipantRow {
 }
 
 function parseCsv(csv: string): ParticipantRow[] {
-  const lines = csv.trim().split(/\r?\n/);
-  if (lines.length < 2) return [];
-  const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
+  const lines = csv.trim().split(/\r?\n/).filter((l) => l.trim());
+  if (lines.length === 0) return [];
+
+  // Detect header presence: a header line will NOT contain an "@" (no email
+  // in column names). If the first line already looks like data, we assume
+  // the canonical column order: email, name, department, jobTitle.
+  const firstHasEmail = lines[0].includes("@");
+  const headers = firstHasEmail
+    ? ["email", "name", "department", "jobtitle"]
+    : lines[0].split(",").map((h) => h.trim().toLowerCase());
+  const dataLines = firstHasEmail ? lines : lines.slice(1);
+
   const idx = (key: string) => headers.indexOf(key);
   const out: ParticipantRow[] = [];
-  for (let i = 1; i < lines.length; i++) {
-    const cells = lines[i].split(",").map((c) => c.trim());
+  for (const line of dataLines) {
+    const cells = line.split(",").map((c) => c.trim());
     if (cells.every((c) => !c)) continue;
     const row: ParticipantRow = {
       email: idx("email") >= 0 ? cells[idx("email")] : "",

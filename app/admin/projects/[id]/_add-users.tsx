@@ -160,12 +160,17 @@ export function AddUsersPanel({ projectId }: { projectId: string }) {
         <p className="mb-2 text-sm font-medium">Bulk CSV import</p>
         <form onSubmit={uploadCsv} className="space-y-3">
           <p className="text-xs text-slate-500">
-            Headers: <code>email,name,department,jobTitle</code>. One row per participant.
+            Columns: <code>email,name,department,jobTitle</code> (header row optional).
+            One participant per line.
           </p>
           <Textarea
             name="csv"
             rows={6}
-            placeholder="email,name,department,jobTitle&#10;ahmed@org.com,Ahmed Al-Kuwari,Air Navigation Services,Senior ATC"
+            placeholder={
+              "email,name,department,jobTitle\n" +
+              "ahmed@org.com,Ahmed Al-Kuwari,Air Navigation Services,Senior ATC\n" +
+              "fatima@org.com,Fatima Al-Thani,Safety,Inspector"
+            }
             required
           />
           <div className="space-y-1">
