@@ -46,8 +46,11 @@ const config: Config = {
         },
         sia: {
           navy: "#0B1F3A",
-          ink: "#0E1B2C",
+          ink: "#0A1628",
+          deep: "#060F1C",
           gold: "#C5A572",
+          champagne: "#D4BE94",
+          cream: "#F5F0EA",
           maroon: "#8A1538",
         },
         brand: {
@@ -55,6 +58,10 @@ const config: Config = {
           secondary: "var(--brand-secondary)",
           accent: "var(--brand-accent)",
         },
+      },
+      fontFamily: {
+        sans: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
+        display: ["var(--font-display)", "Georgia", "serif"],
       },
       borderRadius: {
         lg: "var(--radius)",
