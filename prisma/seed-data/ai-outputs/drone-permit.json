@@ -1,0 +1,51 @@
+{
+  "reframedProblem": {
+    "statement": "Drone permit issuance is bottlenecked not by decision complexity but by manual fan-out across siloed data sources — pilot DB, NOTAMs, GIS no-fly zones, security clearance — combined with informal triage that varies by officer. An orchestration agent that runs all checks deterministically and routes only the genuinely ambiguous cases to humans can collapse the cycle from 9 days to under 2 while improving consistency.",
+    "rootCauseHypotheses": [
+      "Decision logic lives in the heads of two licensing officers, not in a codified rule engine.",
+      "Required inputs sit in 4 disconnected systems with no integration layer.",
+      "Incomplete-application back-and-forth happens over email, adding 2-3 days per cycle."
+    ],
+    "stakeholderMap": [
+      { "stakeholder": "Personnel Licensing officers", "interest": "Faster turnaround without compromising scrutiny", "influence": "high" },
+      { "stakeholder": "Air Navigation Services", "interest": "Coordinated airspace deconfliction", "influence": "high" },
+      { "stakeholder": "Ministry / regulators", "interest": "Compliance and SLA adherence", "influence": "high" },
+      { "stakeholder": "Drone operators (commercial, media, recreational)", "interest": "Real-time status, predictability", "influence": "medium" }
+    ],
+    "successCriteria": [
+      "Average cycle time ≤2 business days for ≥70% of standard applications.",
+      "Zero increase in safety exceptions vs current baseline.",
+      "Backlog cleared within 8 weeks of go-live."
+    ]
+  },
+  "benchmarking": {
+    "similarCases": [
+      { "organization": "FAA LAANC (United States)", "industry": "Aviation regulation", "approach": "Built an automated low-altitude authorization system that pulls airspace data, evaluates against rules, and issues approvals in real time for routine cases.", "outcome": "95% of recreational and commercial Part 107 LAANC requests are approved same-day; manual review only for complex cases.", "relevanceToThisChallenge": "Demonstrates the orchestrate-and-route pattern at scale in a regulator context — the canonical reference implementation." },
+      { "organization": "CAA UK Drone Code", "industry": "Aviation regulation", "approach": "Combined a self-service registration portal with rule-based pre-checks and a tiered approval workflow for edge cases.", "outcome": "Reduced average operator wait time by 60% and cut email volume to licensing teams by 75%.", "relevanceToThisChallenge": "Shows the value of a thin conversational layer in front of the orchestration." },
+      { "organization": "CAAS Singapore UAS Portal", "industry": "Aviation regulation", "approach": "Single integrated portal that ingests applications, runs automated airspace and pilot checks, and escalates only the ambiguous cases.", "outcome": "Standard permits issued in 1-2 working days vs prior 7-10.", "relevanceToThisChallenge": "Closest peer in scale and regulatory model — directly informs the QCAA target architecture." }
+    ],
+    "industryBestPractices": [
+      "Codify the rule engine BEFORE asking an LLM to reason — keep the LLM as orchestrator, not arbiter.",
+      "Always preserve a clear human-in-the-loop bypass with a complete audit trail of agent actions.",
+      "Measure cycle time from week 1 against the pre-launch baseline — don't try to retrofit metrics."
+    ],
+    "commonPitfalls": [
+      "Treating the LLM as the system of record instead of the orchestrator over deterministic services.",
+      "No graceful fallback when external data sources (GIS, NOTAMs) are slow or temporarily unavailable.",
+      "Underestimating change-management work for officers whose roles shift from review to exception handling."
+    ]
+  },
+  "suggestedAgents": [
+    { "name": "Permit Triage Agent", "oneLiner": "Reads each incoming application, runs all automated checks, and classifies as auto-approve / needs-review / reject with rationale.", "agentType": "workflow", "primaryUserRole": "Licensing officer (front-line)", "coreCapabilities": ["Application document parsing", "Multi-source data aggregation (pilot DB, NOTAMs, GIS, security)", "Confidence-scored classification with explainable rationale"], "requiredDataSources": ["Application intake DB", "Pilot certification DB", "NOTAM feed", "GIS no-fly zone API"], "suggestedTechStack": { "framework": "LangGraph", "llm": "claude-sonnet-4-6", "rationale": "LangGraph's stateful workflow fits a deterministic multi-step pipeline; Sonnet balances reasoning quality with the latency officers need at the frontline." }, "feasibilityScore": 9, "feasibilityRationale": "All required data is already available within QCAA. Integration surface is small (4 systems). Rules can be codified inside 2 weeks. Skills exist on the IT team.", "impactScore": 8, "impactRationale": "Cuts cycle time on the routine 70% of cases (estimated 420 of 600 backlog applications); frees ~1.5 FTE for higher-value review and exception handling.", "estimatedBuildEffort": "4 weeks for a 3-person team", "risks": ["Edge cases in legacy / paper applications not covered by parser", "GIS API auth changes mid-build"] },
+    { "name": "Compliance Verification Agent", "oneLiner": "Cross-references each application in real time against current QCAR and ICAO requirements, flagging contradictions before issuance.", "agentType": "autonomous", "primaryUserRole": "Compliance / safety reviewer", "coreCapabilities": ["Regulatory retrieval over QCAR + ICAO Annex 14", "Cross-source consistency check", "Exception escalation with cited clauses"], "requiredDataSources": ["QCAR corpus", "ICAO Annex 14", "Internal SOPs", "Decision history"], "suggestedTechStack": { "framework": "Claude Agents SDK", "llm": "claude-opus-4-7", "rationale": "Reasoning-heavy and compliance-sensitive — Opus's higher accuracy is worth the latency, and the Claude Agents SDK keeps tool use disciplined." }, "feasibilityScore": 7, "feasibilityRationale": "Requires a clean, version-controlled regulatory corpus to be safe. QCAA has the corpus but not the version control today.", "impactScore": 9, "impactRationale": "Reduces compliance exceptions by an estimated 40-60% and eliminates the related rework loop entirely.", "estimatedBuildEffort": "5 weeks for a 3-person team", "risks": ["Regulatory hallucination if the corpus is stale", "Auditing the agent's reasoning at the regulator's standard"] },
+    { "name": "Applicant Communication Agent", "oneLiner": "Conversational agent that handles incomplete-submission back-and-forth with operators and provides real-time status updates.", "agentType": "conversational", "primaryUserRole": "Drone operator (external)", "coreCapabilities": ["Multi-turn chat with citations", "Form completion guidance", "Live status updates"], "requiredDataSources": ["Application status DB", "FAQ / SOP library"], "suggestedTechStack": { "framework": "LangChain", "llm": "claude-haiku-4-5", "rationale": "High-volume chat with bounded scope — Haiku is fast and cheap; LangChain has the cleanest chat-with-tools pattern." }, "feasibilityScore": 8, "feasibilityRationale": "Scope is bounded; the main risk is brand-voice consistency, which is addressable with prompt engineering.", "impactScore": 6, "impactRationale": "Eliminates the email back-and-forth that currently adds 2-3 days to the cycle for every incomplete submission.", "estimatedBuildEffort": "3 weeks for a 2-person team", "risks": ["Brand-voice mismatch with QCAA tone", "Hallucinated status if the source DB is unavailable"] },
+    { "name": "Decision Audit Agent", "oneLiner": "Periodically analyzes past permit decisions to surface drift, bias across applicant types, and opportunities for policy refinement.", "agentType": "autonomous", "primaryUserRole": "Operations leadership / policy team", "coreCapabilities": ["Pattern analysis over decision history", "Drift detection vs baseline", "Recommendation drafting for policy team"], "requiredDataSources": ["Decision history", "Outcome data (incidents, complaints)"], "suggestedTechStack": { "framework": "CrewAI", "llm": "claude-sonnet-4-6", "rationale": "Multi-agent crew matches the analyst+writer pairing this work needs (one detects, one writes the recommendation)." }, "feasibilityScore": 6, "feasibilityRationale": "Depends on having clean outcome data tied to decisions — partially available today but needs cleanup.", "impactScore": 7, "impactRationale": "Higher leadership confidence and a clearer policy iteration loop; not directly cycle-time-reducing but strategically valuable.", "estimatedBuildEffort": "4 weeks for a 2-person team", "risks": ["Outcome-data quality", "Confusing analytical findings with policy recommendations"] }
+  ],
+  "toolboxRecommendations": [
+    { "pillar": "Operating Model", "asset": "AI Governance Framework", "whyRelevant": "Defines decision rights and the audit trail required for the agent's autonomous actions in a regulated context." },
+    { "pillar": "Solutions", "asset": "Sectorial Use Case Libraries", "whyRelevant": "Adjacent aviation use cases (FAA, CAA UK, Singapore) reduce design time on the orchestration workflow." },
+    { "pillar": "Operating Model", "asset": "AI Risk & Ethics Charter", "whyRelevant": "Provides the pre-built ethics review templates needed for a safety-critical regulatory deployment." },
+    { "pillar": "Technology and Data", "asset": "Benchmark of Market Solutions", "whyRelevant": "Pre-evaluated comparison of agent frameworks accelerates the LangGraph vs. Claude Agents SDK choice." }
+  ],
+  "executiveSummary": "Drone permit processing at QCAA is a fan-out-and-validate problem where an agent can absorb the routine 70% of cases and let officers focus on the genuinely complex tail. Three to five candidate agents are buildable inside the 10-week program; the Permit Triage Agent and Compliance Verification Agent are the highest-leverage starting points. Expected outcomes include a >75% cycle-time reduction (9 days → ≤2 days), backlog cleared in 8 weeks, and 1.5 FTE re-allocated to exception handling — contingent on clean upstream data and disciplined rule codification."
+}

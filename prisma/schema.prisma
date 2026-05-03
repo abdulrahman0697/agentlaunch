@@ -1,0 +1,284 @@
+// AgentLaunch Prisma schema
+// Implements Section 3 of the BRD.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  // SQLite for the prototype per BRD Section 2 ("SQLite is acceptable").
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model SiaAdmin {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  title        String?
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  createdProjects Project[] @relation("SiaAdminCreatedProjects")
+}
+
+model Project {
+  id               String   @id @default(cuid())
+  name             String
+  clientOrgName    String
+  shortName        String?
+  slug             String   @unique
+  logoUrl          String?
+  primaryColor     String   @default("#0B1F3A")
+  secondaryColor  String   @default("#C5A572")
+  backgroundAccent String   @default("#F5F0EA")
+  welcomeMessage   String?
+  description      String?
+  startDate        DateTime
+  endDate          DateTime
+  status           String   @default("draft") // draft|active|completed|archived
+  cohortSize       Int      @default(0)
+  programWeek      Int      @default(1)
+  certificationsEnabled Boolean @default(true)
+
+  createdBySiaAdminId String?
+  createdBy           SiaAdmin? @relation("SiaAdminCreatedProjects", fields: [createdBySiaAdminId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  projectAdmins        ProjectAdmin[]
+  participants         Participant[]
+  teams                Team[]
+  challenges           StrategicChallenge[]
+  toolboxAssignments   ProjectToolboxItem[]
+  activityLog          ActivityLog[]
+  demoDay              DemoDay?
+}
+
+model ProjectAdmin {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  jobTitle     String?
+  department   String?
+  passwordHash String
+  role         String   @default("project_admin")
+  invitedAt    DateTime @default(now())
+  lastLoginAt  DateTime?
+  projectId    String
+  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  challenges StrategicChallenge[] @relation("ProjectAdminCreatedChallenges")
+}
+
+model Participant {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  department   String?
+  jobTitle     String?
+  projectId    String
+  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  teamId       String?
+  team         Team?    @relation(fields: [teamId], references: [id])
+  certificationsEarned String  @default("[]") // JSON array of cert ids
+  progressStage        String  @default("discovery") // discovery|design|build|realization|completed
+  createdAt    DateTime @default(now())
+  lastLoginAt  DateTime?
+
+  progress      ParticipantProgress[]
+  quizAttempts  QuizAttempt[]
+  coachMessages CoachMessage[]
+}
+
+model Team {
+  id        String  @id @default(cuid())
+  name      String
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  challengeId String? @unique
+  challenge   StrategicChallenge? @relation(fields: [challengeId], references: [id])
+
+  members  Participant[]
+  agents   AgentSolution[]
+  createdAt DateTime @default(now())
+}
+
+model StrategicChallenge {
+  id              String  @id @default(cuid())
+  projectId       String
+  project         Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title           String
+  description     String
+  businessContext String
+  currentPainPoints String
+  desiredOutcome  String
+  departmentTags  String  @default("[]") // JSON array
+  priority        String  @default("medium") // high|medium|low
+  status          String  @default("open") // open|claimed|in_progress|completed
+  aiAnalysis      String? // JSON blob (PROMPT 1 output)
+  suggestedAgents String? // JSON blob (denormalized from analysis for quick reads)
+  benchmarkData   String? // JSON blob
+
+  createdByProjectAdminId String?
+  createdByProjectAdmin   ProjectAdmin? @relation("ProjectAdminCreatedChallenges", fields: [createdByProjectAdminId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  team   Team?
+  agents AgentSolution[]
+  comments ChallengeComment[]
+}
+
+model ChallengeComment {
+  id          String   @id @default(cuid())
+  challengeId String
+  challenge   StrategicChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  authorName  String
+  authorRole  String
+  body        String
+  createdAt   DateTime @default(now())
+}
+
+model AgentSolution {
+  id            String  @id @default(cuid())
+  challengeId   String
+  challenge     StrategicChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  teamId        String
+  team          Team    @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  name          String
+  description   String
+  purpose       String  @default("")
+  agentType     String  @default("workflow")
+  framework     String  @default("LangGraph")
+  llm           String  @default("claude-sonnet-4-6")
+  inputs        String  @default("[]") // JSON
+  tools         String  @default("[]") // JSON
+  outputs       String  @default("[]") // JSON
+  memory        String  @default("")
+  guardrails    String  @default("")
+  architecture  String? // JSON
+  techStack     String? // JSON
+  dataRequirements String?
+  feasibilityScore Int   @default(5)
+  impactScore      Int   @default(5)
+  status        String  @default("draft") // draft|blueprint|building|testing|demo_ready
+  prototype     String? // JSON / scaffolded code
+  scaffoldCode  String? // last generated code (PROMPT 3)
+  pitchDeck     String? // JSON (PROMPT 4)
+  blueprintReview String? // markdown (PROMPT 2)
+  roiModel      String? // JSON
+  roiValidation String? // JSON (PROMPT 7)
+  kpis          String? // JSON
+  risks         String? // JSON
+  roadmap       String? // JSON
+  demoDecision  String? // greenlight|no_go|needs_revision
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model LearningResource {
+  id               String  @id @default(cuid())
+  title            String
+  type             String  // video|article|course|certification|tutorial
+  url              String
+  provider         String
+  topic            String
+  estimatedMinutes Int     @default(0)
+  description      String?
+
+  progress     ParticipantProgress[]
+  quizAttempts QuizAttempt[]
+  cachedQuiz   String? // JSON cached output of PROMPT 6
+}
+
+model ParticipantProgress {
+  id            String   @id @default(cuid())
+  participantId String
+  resourceId    String
+  participant   Participant      @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  resource      LearningResource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  completedAt   DateTime?
+  scorePercent  Int?
+
+  @@unique([participantId, resourceId])
+}
+
+model QuizAttempt {
+  id            String   @id @default(cuid())
+  participantId String
+  resourceId    String
+  participant   Participant      @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  resource      LearningResource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  scorePercent  Int
+  answers       String // JSON
+  createdAt     DateTime @default(now())
+}
+
+model CoachMessage {
+  id            String   @id @default(cuid())
+  participantId String
+  participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  role          String // user|assistant
+  content       String
+  createdAt     DateTime @default(now())
+}
+
+model ToolboxItem {
+  id          String  @id @default(cuid())
+  pillar      String  // Strategy|Operating Model|Solutions|Skills|Technology and Data|Culture
+  name        String
+  description String
+  url         String?
+
+  assignments ProjectToolboxItem[]
+}
+
+model ProjectToolboxItem {
+  id            String      @id @default(cuid())
+  projectId     String
+  toolboxItemId String
+  enabled       Boolean     @default(true)
+  project       Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  toolboxItem   ToolboxItem @relation(fields: [toolboxItemId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, toolboxItemId])
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  userId    String?
+  userType  String   // sia_admin|project_admin|participant|system
+  userName  String?
+  action    String
+  payload   String   @default("{}")
+  timestamp DateTime @default(now())
+}
+
+model AiCallLog {
+  id            String   @id @default(cuid())
+  projectId     String?
+  feature       String   // analyzeChallenge|reviewBlueprint|...
+  model         String
+  inputTokens   Int      @default(0)
+  outputTokens  Int      @default(0)
+  estimatedCost Float    @default(0)
+  status        String   @default("ok") // ok|error
+  errorMessage  String?
+  createdAt     DateTime @default(now())
+}
+
+model DemoDay {
+  id           String   @id @default(cuid())
+  projectId    String   @unique
+  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  scheduledAt  DateTime?
+  reviewers    String   @default("[]") // JSON list of {name,email,org}
+  pitchOrder   String   @default("[]") // JSON list of teamIds
+  notes        String?
+}
