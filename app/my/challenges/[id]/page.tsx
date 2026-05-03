@@ -14,12 +14,13 @@ export const dynamic = "force-dynamic";
 export default async function ParticipantChallengeDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
   const session = await getParticipantSession();
+  const { id } = await params;
   const [challenge, project] = await Promise.all([
     prisma.strategicChallenge.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { team: true },
     }),
     prisma.project.findUnique({ where: { id: session.projectId } }),

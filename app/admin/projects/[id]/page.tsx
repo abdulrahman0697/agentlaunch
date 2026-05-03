@@ -27,12 +27,14 @@ export default async function ProjectDetailPage({
   params,
   searchParams,
 }: {
-  params: { id: string };
-  searchParams: { tab?: string };
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ tab?: string }>;
 }) {
-  const tab = searchParams.tab || "overview";
+  const { id } = await params;
+  const sp = await searchParams;
+  const tab = sp.tab || "overview";
   const project = await prisma.project.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       _count: {
         select: {

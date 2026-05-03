@@ -30,8 +30,9 @@ const JSON_FIELDS = [
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
+  const { id } = await params;
   let session;
   try {
     session = await requireSession("participant");
@@ -39,7 +40,7 @@ export async function PUT(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const agent = await prisma.agentSolution.findUnique({
-    where: { id: params.id },
+    where: { id: id },
     include: { team: true },
   });
   if (!agent || agent.team.projectId !== session.projectId) {
@@ -59,7 +60,7 @@ export async function PUT(
   for (const k of JSON_FIELDS) {
     if (k in body) data[k] = JSON.stringify(body[k]);
   }
-  await prisma.agentSolution.update({ where: { id: params.id }, data });
+  await prisma.agentSolution.update({ where: { id: id }, data });
 
   if (body.status === "blueprint" && agent.status === "draft") {
     await prisma.activityLog.create({
@@ -69,7 +70,7 @@ export async function PUT(
         userType: "participant",
         userName: session.name,
         action: "participant.blueprint_saved",
-        payload: JSON.stringify({ agentId: params.id }),
+        payload: JSON.stringify({ agentId: id }),
       },
     });
   }

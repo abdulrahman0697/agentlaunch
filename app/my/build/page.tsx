@@ -26,8 +26,9 @@ const TABS = [
 export default async function BuildWorkspacePage({
   searchParams,
 }: {
-  searchParams: { tab?: string };
+  searchParams: Promise<{ tab?: string }>;
 }) {
+  const sp = await searchParams;
   const session = await getParticipantSession();
   if (!session.teamId) {
     return (
@@ -58,7 +59,7 @@ export default async function BuildWorkspacePage({
     );
   }
 
-  const tab = searchParams.tab || "discovery";
+  const tab = sp.tab || "discovery";
   const agent = await getOrCreateTeamAgent(team.id, team.challenge.id);
   const analysis = safeJson<ChallengeAnalysis | null>(team.challenge.aiAnalysis, null);
   const roi = safeJson<RoiModel | null>(agent.roiModel || null, null);

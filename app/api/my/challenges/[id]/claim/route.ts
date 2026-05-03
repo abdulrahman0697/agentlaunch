@@ -4,8 +4,9 @@ import { requireSession } from "@/lib/auth/session";
 
 export async function POST(
   _req: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
+  const { id } = await params;
   let session;
   try {
     session = await requireSession("participant");
@@ -16,7 +17,7 @@ export async function POST(
     return NextResponse.json({ error: "You're not on a team yet" }, { status: 400 });
   }
   const challenge = await prisma.strategicChallenge.findUnique({
-    where: { id: params.id },
+    where: { id: id },
   });
   if (!challenge || challenge.projectId !== session.projectId) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -33,10 +34,10 @@ export async function POST(
   }
   await prisma.team.update({
     where: { id: session.teamId as string },
-    data: { challengeId: params.id },
+    data: { challengeId: id },
   });
   await prisma.strategicChallenge.update({
-    where: { id: params.id },
+    where: { id: id },
     data: { status: "claimed" },
   });
   await prisma.activityLog.create({
@@ -46,7 +47,7 @@ export async function POST(
       userType: "participant",
       userName: session.name,
       action: "participant.challenge_claimed",
-      payload: JSON.stringify({ challengeId: params.id, teamId: session.teamId }),
+      payload: JSON.stringify({ challengeId: id, teamId: session.teamId }),
     },
   });
   return NextResponse.json({ ok: true });

@@ -4,8 +4,9 @@ import { requireSession } from "@/lib/auth/session";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
+  const { id } = await params;
   let session;
   try {
     session = await requireSession("participant");
@@ -16,7 +17,7 @@ export async function POST(
   await prisma.quizAttempt.create({
     data: {
       participantId: session.sub,
-      resourceId: params.id,
+      resourceId: id,
       scorePercent: Math.max(0, Math.min(100, Math.round(score))),
       answers: JSON.stringify(answers || {}),
     },
@@ -25,13 +26,13 @@ export async function POST(
     where: {
       participantId_resourceId: {
         participantId: session.sub,
-        resourceId: params.id,
+        resourceId: id,
       },
     },
     update: { completedAt: new Date(), scorePercent: score },
     create: {
       participantId: session.sub,
-      resourceId: params.id,
+      resourceId: id,
       completedAt: new Date(),
       scorePercent: score,
     },
@@ -43,7 +44,7 @@ export async function POST(
       userType: "participant",
       userName: session.name,
       action: "participant.quiz_completed",
-      payload: JSON.stringify({ resourceId: params.id, score }),
+      payload: JSON.stringify({ resourceId: id, score }),
     },
   });
   return NextResponse.json({ ok: true });

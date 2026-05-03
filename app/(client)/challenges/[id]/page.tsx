@@ -29,13 +29,15 @@ export default async function ChallengeDetailPage({
   params,
   searchParams,
 }: {
-  params: { id: string };
-  searchParams: { tab?: string };
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ tab?: string }>;
 }) {
   const session = await getProjectAdminSession();
-  const tab = searchParams.tab || "brief";
+  const { id } = await params;
+  const sp = await searchParams;
+  const tab = sp.tab || "brief";
   const challenge = await prisma.strategicChallenge.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       team: { include: { members: true } },
       agents: true,

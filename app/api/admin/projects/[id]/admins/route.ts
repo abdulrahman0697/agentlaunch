@@ -5,8 +5,9 @@ import { hashPassword } from "@/lib/auth/passwords";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
+  const { id } = await params;
   let session;
   try {
     session = await requireSession("sia_admin");
@@ -30,7 +31,7 @@ export async function POST(
       jobTitle: body.jobTitle || null,
       department: body.department || null,
       passwordHash: await hashPassword(body.password),
-      projectId: params.id,
+      projectId: id,
     },
   });
   // Mock email send (Section 11 — print to console).
@@ -39,7 +40,7 @@ export async function POST(
   );
   await prisma.activityLog.create({
     data: {
-      projectId: params.id,
+      projectId: id,
       userId: session.sub,
       userType: "sia_admin",
       userName: session.name,

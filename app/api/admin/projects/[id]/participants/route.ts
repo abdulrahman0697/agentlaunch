@@ -35,8 +35,9 @@ function parseCsv(csv: string): ParticipantRow[] {
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
+  const { id } = await params;
   let session;
   try {
     session = await requireSession("sia_admin");
@@ -85,7 +86,7 @@ export async function POST(
         department: row.department || null,
         jobTitle: row.jobTitle || null,
         passwordHash: hash,
-        projectId: params.id,
+        projectId: id,
       },
     });
     added++;
@@ -93,7 +94,7 @@ export async function POST(
 
   await prisma.activityLog.create({
     data: {
-      projectId: params.id,
+      projectId: id,
       userId: session.sub,
       userType: "sia_admin",
       userName: session.name,

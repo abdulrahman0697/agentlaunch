@@ -4,8 +4,9 @@ import { requireSession } from "@/lib/auth/session";
 
 export async function POST(
   _req: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
+  const { id } = await params;
   let session;
   try {
     session = await requireSession("participant");
@@ -16,13 +17,13 @@ export async function POST(
     where: {
       participantId_resourceId: {
         participantId: session.sub,
-        resourceId: params.id,
+        resourceId: id,
       },
     },
     update: { completedAt: new Date() },
     create: {
       participantId: session.sub,
-      resourceId: params.id,
+      resourceId: id,
       completedAt: new Date(),
     },
   });

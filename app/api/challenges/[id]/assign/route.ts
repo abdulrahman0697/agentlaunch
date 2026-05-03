@@ -4,8 +4,9 @@ import { requireSession } from "@/lib/auth/session";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
+  const { id } = await params;
   let session;
   try {
     session = await requireSession("project_admin");
@@ -14,7 +15,7 @@ export async function POST(
   }
   const { teamId } = await req.json();
   const challenge = await prisma.strategicChallenge.findUnique({
-    where: { id: params.id },
+    where: { id: id },
   });
   if (!challenge || challenge.projectId !== session.projectId) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -22,7 +23,7 @@ export async function POST(
 
   // Detach any prior team — the relation is owned by Team via challengeId.
   await prisma.team.updateMany({
-    where: { challengeId: params.id },
+    where: { challengeId: id },
     data: { challengeId: null },
   });
 
@@ -30,14 +31,14 @@ export async function POST(
   if (teamId) {
     await prisma.team.update({
       where: { id: teamId },
-      data: { challengeId: params.id },
+      data: { challengeId: id },
     });
     if (challenge.status === "open") newStatus = "claimed";
   } else {
     newStatus = "open";
   }
   await prisma.strategicChallenge.update({
-    where: { id: params.id },
+    where: { id: id },
     data: { status: newStatus },
   });
 
@@ -48,7 +49,7 @@ export async function POST(
       userType: "project_admin",
       userName: session.name,
       action: teamId ? "project_admin.team_assigned" : "project_admin.team_unassigned",
-      payload: JSON.stringify({ challengeId: params.id, teamId }),
+      payload: JSON.stringify({ challengeId: id, teamId }),
     },
   });
 

@@ -4,8 +4,9 @@ import { requireSession } from "@/lib/auth/session";
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
+  const { id } = await params;
   let session;
   try {
     session = await requireSession("sia_admin");
@@ -36,7 +37,7 @@ export async function PUT(
   if (body.endDate) data.endDate = new Date(body.endDate);
 
   const updated = await prisma.project.update({
-    where: { id: params.id },
+    where: { id: id },
     data,
   });
 
@@ -58,8 +59,9 @@ export async function PUT(
 
 export async function DELETE(
   _req: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
+  const { id } = await params;
   let session;
   try {
     session = await requireSession("sia_admin");
@@ -68,7 +70,7 @@ export async function DELETE(
   }
   // Soft-delete by archiving (per BRD Section 4.2 — soft delete with confirm modal).
   const updated = await prisma.project.update({
-    where: { id: params.id },
+    where: { id: id },
     data: { status: "archived" },
   });
   await prisma.activityLog.create({
