@@ -95,6 +95,7 @@ export default async function BuildWorkspacePage({
       {tab === "discovery" ? (
         <DiscoveryTab
           agentId={agent.id}
+          challengeId={team.challenge.id}
           challengeTitle={team.challenge.title}
           analysis={analysis}
           name={agent.name}

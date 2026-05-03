@@ -323,6 +323,25 @@ All notable changes to AgentLaunch are tracked here, milestone by milestone, as 
   client name, "Drone Permit Processing", "Team Skyway", "Week 6". All 3
   projects visible to Sia Admin. `next build` clean.
 
+### Post-M7 — Discovery & Scoping AI agent suggestions
+
+- New AI feature on the participant **Build Workspace · Discovery & Scoping**
+  tab: **"✨ Suggest agents with AI"**. Reviews the team's claimed challenge,
+  proposes 5 distinct candidate agents, and for each one returns:
+  - 3-5 measurable expected outcomes tied to the challenge's success criteria
+  - 2-3 real-world benchmark references with title, organization, headline
+    metric, source, and a clickable URL (with a Google-search fallback URL
+    when the model isn't confident in a direct link, so links never 404)
+  - Pre-filled framework + LLM choice and an inputs/tools/outputs spec
+- Selecting a suggestion auto-fills the participant's concept brief (name,
+  purpose, description) **and** the blueprint inputs (agent type, framework,
+  LLM, inputs/tools/outputs, feasibility/impact scores) via the existing
+  `/api/my/agent/[id]` PUT — no schema change needed.
+- New prompt module `lib/ai/prompts/suggestAgents.ts` (Section 7.10 shape;
+  Opus, 4500 max tokens, temp 0.6).
+- New route `app/api/ai/suggest-agents/route.ts` with structured stub
+  fallback when `ANTHROPIC_API_KEY` isn't set.
+
 ---
 
 ## Final state
